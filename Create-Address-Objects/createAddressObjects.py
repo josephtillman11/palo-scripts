@@ -110,4 +110,5 @@ def createObject(textFile, tagName):
                 print (f"Error: {e}")
                 return 
 
-createObject('objectList.txt', 'my-tag')
+if __name__ == "__main__":
+    createObject('objectList.txt', 'my-tag')
