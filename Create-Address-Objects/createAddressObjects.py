@@ -52,7 +52,9 @@ def createTag(tagName):
         return
     print('Created tag '+tagName)
 
-def createObject(textFile, tagName):
+def createObject(sys.argv[1], sys.argv[2]):
+    textFile = sys.argv[1]
+    tagName = sys.argv[2]
     # Verify text file exists and is not empty
     fileExists = False
     try:
@@ -111,4 +113,10 @@ def createObject(textFile, tagName):
                 return 
 
 if __name__ == "__main__":
-    createObject('objectList.txt', 'my-tag')
+    if len(sys.argv) == 2:
+        try:
+            createObject(sys.argv[3])
+        except:
+            print("An error occurred")
+    else:
+        print("This script takes exactly 2 arguments.\nEx: \'python3 createAddressObjects.py myfqdnlist.txt my-tag'")
