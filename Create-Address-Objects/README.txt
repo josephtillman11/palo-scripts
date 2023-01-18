@@ -1,6 +1,7 @@
 This script does the following:
 
 - Takes 2 inputs: A txt file (must exist in same dir as the script) that contains a list of FQDNs/IP addresses/IP networks and a tag name to tag each address added.
+  - The list can contain FQDNs, IPv4 host addresses, IPv4 network addresses with CIDR notation, IPv6 host addresses, IPv6 network addresses with CIDR notation.
 - Verify that the file exists and is not empty
 - Use Palo's REST API to see if the tag already exists on the firewall. If it doesn't, then it creates it.
 - Add the entries from the text file to a python list.
