@@ -127,6 +127,7 @@ def createObject(textFile, tagName):
             name = line
             if addyType == 'ip-netmask':
                 name = re.sub("/", "-", line)
+                name = re.sub(":", ".", name)
             payload = json.dumps({
             "entry": [
                 {
