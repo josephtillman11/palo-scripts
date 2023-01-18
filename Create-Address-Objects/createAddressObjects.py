@@ -3,8 +3,9 @@ import json
 import requests
 import configparser
 from requests.exceptions import RequestException
+import ipaddress
+import re
 
-# Store values in config.ini
 config = configparser.ConfigParser()
 config.read('config.ini')
 api_key = config['api']['key']
@@ -52,9 +53,36 @@ def createTag(tagName):
         return
     print('Created tag '+tagName)
 
-def createObject(sys.argv[1], sys.argv[2]):
-    textFile = sys.argv[1]
-    tagName = sys.argv[2]
+def checkAddyType(entry):
+    type = 'invalid'
+    # Check if entry is a hostname. Code from https://stackoverflow.com/questions/2532053/validate-a-hostname-string
+    try:
+        if len(entry) > 255:
+            print(f'The value {entry} is not valid.')
+            sys.exit()
+        if entry[-1] == '.':
+            entry = entry[:-1] # strip exactly one dot from the right, if present
+        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        if all(allowed.match(x) for x in entry.split(".")):
+            type = 'fqdn'
+    except Exception as e:
+        print(f'Error: {e}')
+        sys.exit()
+    # Check if entry is an IP address
+    try:
+        ipAddress = ipaddress.ip_address(entry)
+        type = 'ip-netmask'
+    except ValueError:
+        pass
+    try:
+        ipAddress = ipaddress.ip_network(entry)
+        type = 'ip-netmask'
+    except ValueError:
+        pass
+    
+    return type
+
+def createObject(textFile, tagName):
     # Verify text file exists and is not empty
     fileExists = False
     try:
@@ -91,13 +119,21 @@ def createObject(sys.argv[1], sys.argv[2]):
         
         # Create the address objects using the url list
         for line in listItems:
+            # Check to see if entry is an fqdn or ip address
+            addyType = checkAddyType(line)
+            if addyType == 'invalid':
+                print(f'{line} is an invalid entry.')
+                continue
+            name = line
+            if addyType == 'ip-netmask':
+                name = re.sub("/", "-", line)
             payload = json.dumps({
             "entry": [
                 {
-                "@name": line,
+                "@name": name,
                 "@location": "vsys",
                 "@vsys": vsys,
-                "fqdn": line,
+                addyType: line,
                 "tag": {
                     "member": [
                         tagName
@@ -106,17 +142,14 @@ def createObject(sys.argv[1], sys.argv[2]):
                 }
             ]
             })
+            print(addyType)
             try:
-                response = requests.request("POST", addressEndpoint+line, headers=headers, data=payload, verify=False)
+                response = requests.request("POST", addressEndpoint+name, headers=headers, data=payload, verify=False)
+                print(response.status_code)
+                print(response.text)
             except RequestException as e:
                 print (f"Error: {e}")
                 return 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        try:
-            createObject(sys.argv[3])
-        except:
-            print("An error occurred")
-    else:
-        print("This script takes exactly 2 arguments.\nEx: \'python3 createAddressObjects.py myfqdnlist.txt my-tag'")
+    createObject('objectList.txt', 'my-tag')
