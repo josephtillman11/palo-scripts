@@ -4,15 +4,24 @@ import requests
 import xml.etree.ElementTree as ET
 import ipaddress,socket
 
-
 host = Constants.PAN_HOST
-url = sys.argv[1]
+try:
+    url = sys.argv[1]
+except IndexError:
+    print("ERROR: You must pass FQDN or IP as argument!")
+    exit()
 key = Constants.PAN_API_KEY
 
-def checkUrl (url):
-    r = requests.get(f'https://{host}/api/?type=op&cmd=<test><url>{url}</url></test>&key={key}', verify=True)
-    root = ET.fromstring(r.text)
+# Pass in a FQDN or IP address as an argument. If FQDN, the function will do a category lookup using the PAN REST API.
+# If IP address, if will do a reverse DNS lookup to get a name and then do a category lookup.
 
+def checkUrl (url):
+    try:
+        r = requests.get(f'https://{host}/api/?type=op&cmd=<test><url>{url}</url></test>&key={key}', verify=True)
+        root = ET.fromstring(r.text)
+    except:
+        print(f"Unable to connect to device: {host}.")
+        exit()
     try:
         ip_object = ipaddress.ip_address(url)
         print(f"{url} is an IP address - doing reverse lookup...")
